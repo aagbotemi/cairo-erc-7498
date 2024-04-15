@@ -158,12 +158,12 @@ fn test_burn_internal_token() {
     ];
 
     let requirements = array![
-        CampaignRequirements { offer, consideration }
+        CampaignRequirements { offer: offer.span(), consideration: consideration.span() }
     ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
-        requirements,
+        requirements: requirements.span(),
         signer: ZERO(),
         start_time: timestamp,
         end_time: timestamp + 1000,
@@ -265,12 +265,12 @@ fn test_revert_721_consideration_item_insufficient_balance() {
     ];
 
     let requirements = array![
-        CampaignRequirements { offer, consideration }
+        CampaignRequirements { offer: offer.span(), consideration: consideration.span() }
     ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
-        requirements,
+        requirements: requirements.span(),
         signer: ZERO(),
         start_time: timestamp,
         end_time: timestamp + 1000,
@@ -348,12 +348,12 @@ fn test_revert_consideration_length_not_met() {
     ];
 
     let requirements = array![
-        CampaignRequirements { offer, consideration }
+        CampaignRequirements { offer: offer.span(), consideration: consideration.span() }
     ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
-        requirements,
+        requirements: requirements.span(),
         signer: ZERO(),
         start_time: timestamp,
         end_time: timestamp + 1000,
@@ -435,12 +435,12 @@ fn test_burn_with_second_consideration_item() {
     ];
 
     let requirements = array![
-        CampaignRequirements { offer, consideration }
+        CampaignRequirements { offer: offer.span(), consideration: consideration.span() }
     ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
-        requirements,
+        requirements: requirements.span(),
         signer: ZERO(),
         start_time: timestamp,
         end_time: timestamp + 1000,
@@ -523,15 +523,15 @@ fn test_burn_with_second_requirements_index() {
     ];
 
     let requirements = array![
-        CampaignRequirements { offer: offer.clone(), consideration },
+        CampaignRequirements { offer: offer.span(), consideration: consideration.span() },
         CampaignRequirements {
-            offer: offer.clone(), consideration: second_requirements_consideration
+            offer: offer.span(), consideration: second_requirements_consideration.span()
         }
     ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
-        requirements,
+        requirements: requirements.span(),
         signer: ZERO(),
         start_time: timestamp,
         end_time: timestamp + 1000,

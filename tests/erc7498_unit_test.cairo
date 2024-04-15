@@ -1,8 +1,6 @@
 use core::clone::Clone;
 use core::traits::TryInto;
-use starknet::{
-    ContractAddress, contract_address_const, get_block_timestamp, contract_address_to_felt252
-};
+use starknet::{ContractAddress, contract_address_const, get_block_timestamp};
 use snforge_std::{
     declare, ContractClassTrait, test_address, spy_events, SpyOn, EventSpy, EventAssertions
 };
@@ -217,12 +215,14 @@ fn test_create_campaign_success() {
     let mut offer_array = array![];
     offer_array.append(offer);
 
-    let requirements = array![CampaignRequirements { offer: offer_array, consideration }];
+    let requirements = array![
+        CampaignRequirements { offer: offer_array.span(), consideration: consideration.span() }
+    ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
 
     let params = CampaignParams {
-        requirements,
+        requirements: requirements.span(),
         signer: ZERO(),
         start_time: timestamp,
         end_time: timestamp + 1000,
@@ -300,11 +300,13 @@ fn test_get_campaign() {
 
     offer_array.append(offer);
 
-    let requirements = array![CampaignRequirements { offer: offer_array, consideration }];
+    let requirements = array![
+        CampaignRequirements { offer: offer_array.span(), consideration: consideration.span() }
+    ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
-        requirements,
+        requirements: requirements.span(),
         signer: ZERO(),
         start_time: timestamp,
         end_time: timestamp + 1000,
@@ -351,11 +353,13 @@ fn test_update_campaign() {
     let mut offer_array = array![];
     offer_array.append(offer);
 
-    let requirements = array![CampaignRequirements { offer: offer_array, consideration }];
+    let requirements = array![
+        CampaignRequirements { offer: offer_array.span(), consideration: consideration.span() }
+    ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
-        requirements,
+        requirements: requirements.span(),
         signer: ZERO(),
         start_time: timestamp,
         end_time: timestamp + 1000,
@@ -388,11 +392,13 @@ fn test_update_campaign() {
     ];
 
     let update_requirements = array![
-        CampaignRequirements { offer: update_offer, consideration: update_consideration }
+        CampaignRequirements {
+            offer: update_offer.span(), consideration: update_consideration.span()
+        }
     ];
 
     let update_params = CampaignParams {
-        requirements: update_requirements,
+        requirements: update_requirements.span(),
         signer: ZERO(),
         start_time: timestamp,
         end_time: timestamp + 10000,
@@ -440,11 +446,13 @@ fn test_redeem_campaign() {
     let mut offer_array = array![];
     offer_array.append(offer);
 
-    let requirements = array![CampaignRequirements { offer: offer_array, consideration }];
+    let requirements = array![
+        CampaignRequirements { offer: offer_array.span(), consideration: consideration.span() }
+    ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
-        requirements,
+        requirements: requirements.span(),
         signer: ZERO(),
         start_time: timestamp,
         end_time: timestamp + 1000,
