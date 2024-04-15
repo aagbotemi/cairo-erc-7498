@@ -1,3 +1,4 @@
+use core::panic_with_felt252;
 use core::traits::TryInto;
 use starknet::ContractAddress;
 use starknet::contract_address_const;
@@ -156,7 +157,9 @@ fn test_burn_internal_token() {
         }
     ];
 
-    let requirements = array![CampaignRequirements { offer, consideration }];
+    let requirements = array![
+        CampaignRequirements { offer, consideration }
+    ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
@@ -199,8 +202,8 @@ fn test_burn_internal_token() {
             @array![
                 (
                     redeem_contract_address,
-                    ERC721Redeemables::ERC7498Component::Event::Redemption(
-                        ERC721Redeemables::ERC7498Component::Redemption {
+                    ERC7498Component::Event::Redemption(
+                        ERC7498Component::Redemption {
                             campaign_id: 1,
                             requirements_index: 0,
                             redemption_hash: 0,
@@ -261,7 +264,9 @@ fn test_revert_721_consideration_item_insufficient_balance() {
         }
     ];
 
-    let requirements = array![CampaignRequirements { offer, consideration }];
+    let requirements = array![
+        CampaignRequirements { offer, consideration }
+    ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
@@ -342,7 +347,9 @@ fn test_revert_consideration_length_not_met() {
         }
     ];
 
-    let requirements = array![CampaignRequirements { offer, consideration }];
+    let requirements = array![
+        CampaignRequirements { offer, consideration }
+    ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
@@ -427,7 +434,9 @@ fn test_burn_with_second_consideration_item() {
         }
     ];
 
-    let requirements = array![CampaignRequirements { offer, consideration }];
+    let requirements = array![
+        CampaignRequirements { offer, consideration }
+    ];
 
     let timestamp: u32 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
