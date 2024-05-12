@@ -1,117 +1,20 @@
-use core::clone::Clone;
-use core::traits::TryInto;
-use starknet::{ContractAddress, contract_address_const, get_block_timestamp};
-use snforge_std::{
-    declare, ContractClassTrait, test_address, spy_events, SpyOn, EventSpy, EventAssertions
-};
-use openzeppelin::utils::serde::SerializedAppend;
-use openzeppelin::token::erc721::ERC721Component;
+use starknet::{ContractAddress, get_block_timestamp};
+use snforge_std::{test_address};
 use cairo_erc_7498::erc7498::interface::{
-    IERC7498_ID, BURN_ADDRESS, ItemType, OfferItem, ConsiderationItem, CampaignRequirements,
-    CampaignParams, IERC7498, IERC7498Dispatcher, IERC7498DispatcherTrait
+    BURN_ADDRESS, ItemType, OfferItem, ConsiderationItem, CampaignRequirements, CampaignParams,
 };
-use cairo_erc_7498::erc7498::erc7498::ERC7498Component;
-use cairo_erc_7498::presets::erc721_redeemables::{
-    ERC721Redeemables, IERC721RedeemablesMixinDispatcherTrait, IERC721RedeemablesMixinDispatcher,
-    IERC721RedeemablesMixinSafeDispatcherTrait, IERC721RedeemablesMixinSafeDispatcher
-};
-use cairo_erc_7498::presets::erc721_redemption::{
-    IERC721RedemptionMintable, ERC721RedemptionMintable,
-    IERC721RedemptionMintableMixinDispatcherTrait, IERC721RedemptionMintableMixinDispatcher,
-    IERC721RedemptionMintableMixinSafeDispatcherTrait, IERC721RedemptionMintableMixinSafeDispatcher
-};
-use snforge_std::{start_prank, stop_prank, CheatTarget};
+use cairo_erc_7498::presets::erc721_redeemables::{IERC721RedeemablesMixinDispatcherTrait};
+use cairo_erc_7498::presets::erc721_redemption::{IERC721RedemptionMintableMixinDispatcherTrait};
+use snforge_std::{start_prank, CheatTarget};
 
-const TOKEN_ID: u256 = 2;
+use super::test_erc7498::{setup, NAME, SYMBOL, RECIPIENT, ZERO, CAMPAIGN_URI, TOKEN_ID};
+
 const CAMPAIGN_ID: u256 = 1;
-const INVALID_TOKEN_ID: u256 = TOKEN_ID + 1;
-
-fn NAME() -> ByteArray {
-    "ERC721Redeemables"
-}
-
-fn SYMBOL() -> ByteArray {
-    "ERC721RDM"
-}
-
-fn OWNER() -> ContractAddress {
-    contract_address_const::<'OWNER'>()
-}
-
-fn ACCOUNT1() -> ContractAddress {
-    contract_address_const::<'ACCOUNT1'>()
-}
-
-fn BASE_URI() -> ByteArray {
-    "https://example.com"
-}
-
-fn ZERO() -> ContractAddress {
-    contract_address_const::<0>()
-}
-
-fn CAMPAIGN_URI() -> ByteArray {
-    "https://example.com/campaign"
-}
 
 fn CAMPAIGN_URI_NEW() -> ByteArray {
     "https://example.com/new/campaign"
 }
 
-fn setup() -> (
-    ContractAddress,
-    IERC721RedeemablesMixinDispatcher,
-    IERC721RedeemablesMixinSafeDispatcher,
-    ContractAddress,
-    IERC721RedeemablesMixinDispatcher,
-    IERC721RedeemablesMixinSafeDispatcher,
-    ContractAddress,
-    IERC721RedemptionMintableMixinDispatcher,
-    IERC721RedemptionMintableMixinSafeDispatcher
-) {
-    let redeem_contract = declare("ERC721Redeemables");
-    let mut calldata: Array<felt252> = array![];
-    calldata.append_serde(NAME());
-    calldata.append_serde(SYMBOL());
-    calldata.append_serde(BASE_URI());
-    let redeem_contract_address = redeem_contract.deploy(@calldata).unwrap();
-    let redeem_token = IERC721RedeemablesMixinDispatcher {
-        contract_address: redeem_contract_address
-    };
-    let redeem_token_safe = IERC721RedeemablesMixinSafeDispatcher {
-        contract_address: redeem_contract_address
-    };
-
-    let second_redeem_contract_address = redeem_contract.deploy(@calldata).unwrap();
-    let second_redeem_token = IERC721RedeemablesMixinDispatcher {
-        contract_address: second_redeem_contract_address
-    };
-    let second_redeem_token_safe = IERC721RedeemablesMixinSafeDispatcher {
-        contract_address: second_redeem_contract_address
-    };
-
-    let receive_contract = declare("ERC721RedemptionMintable");
-    calldata.append_serde(test_address());
-    let receive_contract_address = receive_contract.deploy(@calldata).unwrap();
-    let receive_token = IERC721RedemptionMintableMixinDispatcher {
-        contract_address: receive_contract_address
-    };
-    let receive_token_safe = IERC721RedemptionMintableMixinSafeDispatcher {
-        contract_address: receive_contract_address
-    };
-
-    (
-        redeem_contract_address,
-        redeem_token,
-        redeem_token_safe,
-        second_redeem_contract_address,
-        second_redeem_token,
-        second_redeem_token_safe,
-        receive_contract_address,
-        receive_token,
-        receive_token_safe
-    )
-}
 
 fn offer_and_consideration(
     receive_contract_address: ContractAddress, redeem_contract_address: ContractAddress
@@ -139,74 +42,9 @@ fn offer_and_consideration(
 }
 
 #[test]
-fn supports_interface() {
-    let (
-        _redeem_contract_address,
-        redeem_token,
-        _,
-        _,
-        _,
-        _,
-        _receive_contract_address,
-        _receive_token,
-        _
-    ) =
-        setup();
-    assert!(redeem_token.supports_interface(IERC7498_ID));
-}
-
-#[test]
-fn test_mint_token_success() {
-    let (redeem_contract_address, redeem_token, _, _, _, _, _, _, _) = setup();
-
-    redeem_token.set_approval_for_all(redeem_contract_address, true);
-    redeem_token.mint(OWNER(), TOKEN_ID);
-}
-
-#[test]
-#[should_panic()]
-fn test_mint_token_fails_not_owner() {
-    let (redeem_contract_address, redeem_token, _, _, _, _, _, _receive_token, _) = setup();
-
-    start_prank(CheatTarget::One(redeem_contract_address), ACCOUNT1());
-
-    redeem_token.set_approval_for_all(redeem_contract_address, true);
-    redeem_token.mint(OWNER(), TOKEN_ID);
-}
-
-#[test]
-#[should_panic()]
-fn test_mint_token_fails_invalid_receiver() {
-    let (redeem_contract_address, redeem_token, _, _, _, _, _, _receive_token, _) = setup();
-
-    redeem_token.set_approval_for_all(redeem_contract_address, true);
-    redeem_token.mint(ZERO(), TOKEN_ID);
-}
-
-#[test]
-fn test_burn_token_success() {
-    let (_, redeem_token, _, _, _, _, _, _receive_token, _) = setup();
-
-    redeem_token.mint(test_address(), TOKEN_ID);
-    redeem_token.burn(TOKEN_ID);
-}
-
-#[test]
-#[should_panic()]
-fn test_burn_token_invalid_reciever() {
-    let (_, redeem_token, _, _, _, _, _, _receive_token, _) = setup();
-
-    redeem_token.mint(OWNER(), TOKEN_ID);
-    redeem_token.burn(TOKEN_ID);
-}
-
-#[test]
 fn test_create_campaign_success() {
     let (redeem_contract_address, redeem_token, _, _, _, _, receive_contract_address, _, _) =
         setup();
-
-    redeem_token.set_approval_for_all(redeem_contract_address, true);
-    redeem_token.mint(test_address(), TOKEN_ID);
 
     let (offer, consideration) = offer_and_consideration(
         receive_contract_address, redeem_contract_address
@@ -219,7 +57,7 @@ fn test_create_campaign_success() {
         CampaignRequirements { offer: offer_array.span(), consideration: consideration.span() }
     ];
 
-    let timestamp: u32 = get_block_timestamp().try_into().unwrap();
+    let timestamp: u64 = get_block_timestamp().try_into().unwrap();
 
     let params = CampaignParams {
         requirements: requirements.span(),
@@ -235,21 +73,10 @@ fn test_create_campaign_success() {
 
 #[test]
 fn test_mint_redemption_success() {
-    let (
-        redeem_contract_address,
-        redeem_token,
-        _,
-        _,
-        _,
-        _,
-        receive_contract_address,
-        receive_token,
-        _
-    ) =
+    let (redeem_contract_address, _, _, _, _, _, receive_contract_address, receive_token, _) =
         setup();
 
-    redeem_token.set_approval_for_all(redeem_contract_address, true);
-    redeem_token.mint(test_address(), TOKEN_ID);
+    start_prank(CheatTarget::All(()), redeem_contract_address);
 
     let (offer, consideration) = offer_and_consideration(
         receive_contract_address, redeem_contract_address
@@ -259,38 +86,22 @@ fn test_mint_redemption_success() {
 }
 
 #[test]
-#[should_panic()]
+#[should_panic(expected: ('Caller is not the owner',))]
 fn test_mint_redemption_fails_caller_not_owner() {
-    let (
-        redeem_contract_address,
-        redeem_token,
-        _,
-        _,
-        _,
-        _,
-        receive_contract_address,
-        receive_token,
-        _
-    ) =
+    let (redeem_contract_address, _, _, _, _, _, receive_contract_address, receive_token, _) =
         setup();
-    redeem_token.set_approval_for_all(redeem_contract_address, true);
-    redeem_token.mint(test_address(), TOKEN_ID);
 
     let (offer, consideration) = offer_and_consideration(
         receive_contract_address, redeem_contract_address
     );
 
-    start_prank(CheatTarget::One(receive_contract_address), ACCOUNT1());
-
-    receive_token.mint_redemption(CAMPAIGN_ID, OWNER(), offer, consideration.span());
+    receive_token.mint_redemption(CAMPAIGN_ID, RECIPIENT(), offer, consideration.span());
 }
 
 #[test]
 fn test_get_campaign() {
     let (redeem_contract_address, redeem_token, _, _, _, _, receive_contract_address, _, _) =
         setup();
-    redeem_token.set_approval_for_all(redeem_contract_address, true);
-    redeem_token.mint(test_address(), TOKEN_ID);
 
     let (offer, consideration) = offer_and_consideration(
         receive_contract_address, redeem_contract_address
@@ -304,7 +115,7 @@ fn test_get_campaign() {
         CampaignRequirements { offer: offer_array.span(), consideration: consideration.span() }
     ];
 
-    let timestamp: u32 = get_block_timestamp().try_into().unwrap();
+    let timestamp: u64 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
         requirements: requirements.span(),
         signer: ZERO(),
@@ -343,8 +154,6 @@ fn test_get_campaign() {
 fn test_update_campaign() {
     let (redeem_contract_address, redeem_token, _, _, _, _, receive_contract_address, _, _) =
         setup();
-    redeem_token.set_approval_for_all(redeem_contract_address, true);
-    redeem_token.mint(test_address(), TOKEN_ID);
 
     let (offer, consideration) = offer_and_consideration(
         receive_contract_address, redeem_contract_address
@@ -357,7 +166,7 @@ fn test_update_campaign() {
         CampaignRequirements { offer: offer_array.span(), consideration: consideration.span() }
     ];
 
-    let timestamp: u32 = get_block_timestamp().try_into().unwrap();
+    let timestamp: u64 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
         requirements: requirements.span(),
         signer: ZERO(),
@@ -407,7 +216,7 @@ fn test_update_campaign() {
     };
 
     // update_campaign
-    redeem_token.update_campaign(1, update_params.clone(), CAMPAIGN_URI_NEW());
+    redeem_token.update_campaign(CAMPAIGN_ID, update_params.clone(), CAMPAIGN_URI_NEW());
 
     // get_campaign
     let (campaign_params, campaign_uri, total_redemptions) = redeem_token.get_campaign(CAMPAIGN_ID);
@@ -436,7 +245,7 @@ fn test_update_campaign() {
 fn test_redeem_campaign() {
     let (redeem_contract_address, redeem_token, _, _, _, _, receive_contract_address, _, _) =
         setup();
-    redeem_token.set_approval_for_all(redeem_contract_address, true);
+
     redeem_token.mint(test_address(), TOKEN_ID);
 
     let (offer, consideration) = offer_and_consideration(
@@ -450,7 +259,7 @@ fn test_redeem_campaign() {
         CampaignRequirements { offer: offer_array.span(), consideration: consideration.span() }
     ];
 
-    let timestamp: u32 = get_block_timestamp().try_into().unwrap();
+    let timestamp: u64 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
         requirements: requirements.span(),
         signer: ZERO(),
@@ -465,11 +274,56 @@ fn test_redeem_campaign() {
     let extra_data = array![1, 0, 0];
     let consideration_token_ids = array![TOKEN_ID];
 
-    start_prank(CheatTarget::One(receive_contract_address), test_address());
+    start_prank(CheatTarget::One(redeem_contract_address), test_address());
 
     redeem_token.redeem(consideration_token_ids.span(), test_address(), extra_data.span());
 
-    // get_campaign
     let (_, _, total_redemptions) = redeem_token.get_campaign(CAMPAIGN_ID);
     assert!(total_redemptions == 1, "Total Redemption ERROR");
+}
+
+// boundary check
+#[test]
+#[should_panic(expected: ('ERC721: invalid token ID',))]
+fn test_redeem_campaign_boundary_check() {
+    let (redeem_contract_address, redeem_token, _, _, _, _, receive_contract_address, _, _) =
+        setup();
+
+    redeem_token.mint(test_address(), TOKEN_ID);
+
+    let (offer, consideration) = offer_and_consideration(
+        receive_contract_address, redeem_contract_address
+    );
+
+    let mut offer_array = array![];
+    offer_array.append(offer);
+
+    let requirements = array![
+        CampaignRequirements { offer: offer_array.span(), consideration: consideration.span() }
+    ];
+
+    let timestamp: u64 = get_block_timestamp().try_into().unwrap();
+    let params = CampaignParams {
+        requirements: requirements.span(),
+        signer: ZERO(),
+        start_time: timestamp,
+        end_time: timestamp + 1000,
+        max_campaign_redemptions: 5,
+        manager: test_address()
+    };
+
+    redeem_token.create_campaign(params.clone(), CAMPAIGN_URI());
+
+    let extra_data = array![1, 0, 0];
+    let consideration_token_ids = array![TOKEN_ID];
+
+    start_prank(CheatTarget::One(redeem_contract_address), test_address());
+
+    redeem_token.redeem(consideration_token_ids.span(), test_address(), extra_data.span());
+
+    let (_, _, total_redemptions) = redeem_token.get_campaign(CAMPAIGN_ID);
+    assert!(total_redemptions == 1, "Total Redemption ERROR");
+
+    // Call the function or code that you expect to fail with the specific error message
+    redeem_token.redeem(consideration_token_ids.span(), test_address(), extra_data.span());
 }

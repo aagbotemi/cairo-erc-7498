@@ -23,34 +23,34 @@ use cairo_erc_7498::presets::erc721_redemption::{
     IERC721RedemptionMintableMixinSafeDispatcher
 };
 
-const TOKEN_ID: u256 = 2;
-const INVALID_TOKEN_ID: u256 = TOKEN_ID + 1;
+pub const TOKEN_ID: u256 = 2;
+pub const INVALID_TOKEN_ID: u256 = TOKEN_ID + 1;
 
-fn NAME() -> ByteArray {
+pub fn NAME() -> ByteArray {
     "ERC721Redeemables"
 }
 
-fn SYMBOL() -> ByteArray {
+pub fn SYMBOL() -> ByteArray {
     "ERC721RDM"
 }
 
-fn BASE_URI() -> ByteArray {
+pub fn BASE_URI() -> ByteArray {
     "https://example.com"
 }
 
-fn ZERO() -> ContractAddress {
+pub fn ZERO() -> ContractAddress {
     contract_address_const::<0>()
 }
 
-fn RECIPIENT() -> ContractAddress {
+pub fn RECIPIENT() -> ContractAddress {
     contract_address_const::<'RECIPIENT'>()
 }
 
-fn CAMPAIGN_URI() -> ByteArray {
+pub fn CAMPAIGN_URI() -> ByteArray {
     "https://example.com/campaign"
 }
 
-fn setup() -> (
+pub fn setup() -> (
     ContractAddress,
     IERC721RedeemablesMixinDispatcher,
     IERC721RedeemablesMixinSafeDispatcher,
@@ -161,7 +161,7 @@ fn test_burn_internal_token() {
         CampaignRequirements { offer: offer.span(), consideration: consideration.span() }
     ];
 
-    let timestamp: u32 = get_block_timestamp().try_into().unwrap();
+    let timestamp: u64 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
         requirements: requirements.span(),
         signer: ZERO(),
@@ -268,7 +268,7 @@ fn test_revert_721_consideration_item_insufficient_balance() {
         CampaignRequirements { offer: offer.span(), consideration: consideration.span() }
     ];
 
-    let timestamp: u32 = get_block_timestamp().try_into().unwrap();
+    let timestamp: u64 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
         requirements: requirements.span(),
         signer: ZERO(),
@@ -351,7 +351,7 @@ fn test_revert_consideration_length_not_met() {
         CampaignRequirements { offer: offer.span(), consideration: consideration.span() }
     ];
 
-    let timestamp: u32 = get_block_timestamp().try_into().unwrap();
+    let timestamp: u64 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
         requirements: requirements.span(),
         signer: ZERO(),
@@ -438,7 +438,7 @@ fn test_burn_with_second_consideration_item() {
         CampaignRequirements { offer: offer.span(), consideration: consideration.span() }
     ];
 
-    let timestamp: u32 = get_block_timestamp().try_into().unwrap();
+    let timestamp: u64 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
         requirements: requirements.span(),
         signer: ZERO(),
@@ -529,7 +529,7 @@ fn test_burn_with_second_requirements_index() {
         }
     ];
 
-    let timestamp: u32 = get_block_timestamp().try_into().unwrap();
+    let timestamp: u64 = get_block_timestamp().try_into().unwrap();
     let params = CampaignParams {
         requirements: requirements.span(),
         signer: ZERO(),

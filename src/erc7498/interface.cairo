@@ -65,8 +65,8 @@ pub struct CampaignRequirementsStorage {
 
 #[derive(Copy, PartialEq, Drop, Serde)]
 pub struct CampaignParams {
-    pub start_time: u32,
-    pub end_time: u32,
+    pub start_time: u64,
+    pub end_time: u64,
     pub max_campaign_redemptions: u32,
     pub manager: ContractAddress,
     pub signer: ContractAddress,
@@ -75,8 +75,8 @@ pub struct CampaignParams {
 
 #[derive(Copy, Drop, Serde, starknet::Store)]
 pub struct CampaignParamsStorage {
-    pub start_time: u32,
-    pub end_time: u32,
+    pub start_time: u64,
+    pub end_time: u64,
     pub max_campaign_redemptions: u32,
     pub manager: ContractAddress,
     pub signer: ContractAddress,
